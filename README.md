@@ -4,8 +4,8 @@
 底层调用 Everything 的官方命令行 `es.exe`，通过 IPC 复用你**已经在跑**的 Everything 索引 —— 不改 Everything 配置、不重启 Everything、不需要管理员权限。
 
 <p>
-  <img src="screenshots/1-search-results.png" alt="搜索 result 面板：命中总数、分类页签、关键字高亮、路径与大小" width="396">
-  <img src="screenshots/2-recent-history.png" alt="最近搜索历史下拉：可展开、可单条删除、可清空" width="396">
+  <img src="屏幕截图 2026-11-18 165158.png" alt="搜索 result 面板：命中总数、分类页签、关键字高亮、路径与大小" width="396">
+  <img src="屏幕截图 2026-11-18 165255.png" alt="最近搜索历史下拉：可展开、可单条删除、可清空" width="396">
 </p>
 
 左：输入即搜的结果面板（命中总数 + 耗时 + 分类页签 + 关键字高亮）。右：聚焦未输入时弹出的「最近搜索」历史，最多 50 条、默认露 8 条、可展开。
