@@ -1,0 +1,53 @@
+{
+  "name": "everything-search",
+  "version": "1.1.0",
+  "description": "Everything 文件搜索面板：在 DeepSeek Harness 内直接搜索本机文件、打开、定位",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "bin/es.exe"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "engines": {
+      "dsh": ">=0.2.0"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "keywords": [
+    "everything",
+    "search",
+    "file-search",
+    "dsh-plugin",
+    "dsh-bundle"
+  ],
+  "author": "lijiaqi <3272057213@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "os": [
+    "win32"
+  ]
+}

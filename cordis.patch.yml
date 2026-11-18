@@ -1,0 +1,9 @@
+# Everything 文件搜索面板 —— Cordis 装载补丁
+#
+# 安装方式（任选其一）：
+#   1) plugin_manager install_bundle，target = link:<本目录绝对路径>
+#   2) 直接把下面 insert 段追加到 ~/.dsh/profiles/<profile>/cordis.patch.yml
+#
+- insert:
+    - id: everything-search
+      name: 'everything-search'
