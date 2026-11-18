@@ -41,6 +41,13 @@
 - 历史态底栏不显示「`Ctrl+↵` 定位」——那个动作在这个视图里没有意义，只留「选择 / 重搜 / `Esc` 关闭」
 - 点历史条目 = 用它重搜，不是打开文件
 
+**④ 第一次装上来就有画面**：新机器、新会话的 localStorage 里还没有历史，聚焦搜索框不会再是一片空白。
+
+- 空查询且一条历史都没有时，弹层切到引导态：标题「尚未搜索」+「Everything 已就绪」，下面一句「直接输入关键词就能搜本机文件；搜过的词会记在这里，最多保存 50 条」
+- 给五个语法示例按钮（图片 / 文档 / 代码 / 今天改的 / 大文件），点一下把 `ext:jpg;png;webp`、`ext:doc;docx;pdf`、`ext:js;ts;py`、`datemodified:today`、`size:>100mb` 填进输入框并继续聚焦，等于当场演示一遍能搜什么
+- 示例只用 Everything 自己的语法，**不含任何本机路径**——别人装上看到的是他自己的机器，不会印着你的用户名
+- 引导态没有可选的行，底栏只留 `Esc`
+
 ## 排序规则（「相关度」到底是什么）
 
 `sort` 为空 = 相关度模式，**不是** es.exe 的原生顺序。es.exe 默认按名称排序，而 `+`(0x2B) 这类字符排在字母前，所以搜 `QT` 曾经被 `.mqtt\+qt_tutorials` 之类的 MATLAB 工具箱路径霸榜，桌面上的 `QT` 文件夹反而排到 16227 名之后。
@@ -185,6 +192,7 @@ node .selftest\probe.mjs
 - 单文件上限 512MB（`MAX_BLOB_BYTES`），请求体上限 2MB（`MAX_BODY`）
 - **宿主层 401/403 不算插件故障**：整包路由没挂上（插件刚更新但宿主还没重启）或登录态过期时，宿主会直接回纯文本 `unauthorized`。前端把它渲染成黄色提示「刷新页面再试」，不会涂成红字
 - **改完代码要重启宿主**才生效：本插件是 `link:` 装的本地包，`/status` 里的 `build` 字段就是判断依据——它不是当前源码里的 `BUILD_TAG` 就说明进程还在跑旧模块
+- **「装了插件宿主起不来」不一定是插件的问题**：宿主读 profile 清单用的是原生 `JSON.parse`，清单文件一旦被写成**带 BOM 的 UTF-8**，开头的 `U+FEFF` 会让它直接抛 `SyntaxError`，表现就是启动即崩，日志指向 `profiles/<名字>/package.json` 或 `cordis.patch.yml`。Windows 上 `Set-Content -Encoding UTF8`（PowerShell 5.1）之类的写法会悄悄加 BOM。本插件自己的四份文件（`package.json` / `cordis.patch.yml` / `index.js` / `client.js`）首字节分别是 `{` / `#` / `/**`，不含 BOM。真遇上了：先 `Get-Content <文件> -Raw` 看第一个字符，再用 `[System.IO.File]::WriteAllText($p,$s,(New-Object System.Text.UTF8Encoding $false))` 去 BOM 重写，**内容一个字都不用改**
 
 ## 宿主换代怎么不崩（兼容性清单）
 
