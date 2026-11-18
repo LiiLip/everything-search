@@ -43,6 +43,17 @@
     const HIST_COLLAPSED = 8
     /* 历史态弹层宽度：只放关键词，比搜索结果窄一档 */
     const HIST_WIDTH = 300
+    /* 首次安装的引导态举几个例：都只用 Everything 自己的语法，不夹带任何本地路径
+       （这台机器上的 home 是别人的 home，写死就等于把用户名印在界面上） */
+    const WELCOME_TIPS = [
+      { label: '图片', q: 'ext:jpg;png;webp;gif ' },
+      { label: '文档', q: 'ext:doc;docx;pdf;md;txt ' },
+      { label: '代码', q: 'ext:js;ts;py;c;cpp;go;rs ' },
+      { label: '今天改的', q: 'datemodified:today ' },
+      { label: '大文件', q: 'size:>100mb ' },
+    ]
+    /* 引导态没有行可挑：给它一个稳定的空列表，免得残留的旧结果混进来 */
+    const NO_ROWS = []
 
     /** 读历史：localStorage 坏了也绝不让搜索栏跟着挂。 */
     function loadHistory() {
@@ -680,6 +691,18 @@ html[data-dsw-theme="dark"] .esh-root, body[data-dsw-theme="dark"] .esh-root,
 .esh-row-size{ flex:0 0 auto; font:550 10.5px/1 var(--e-mono); color:var(--e-dim); }
 .esh-row mark{ background:var(--e-mark); color:inherit; border-radius:2px; padding:0 1px; }
 .esh-empty{ padding:20px 12px; text-align:center; color:var(--e-dim); font-size:12.5px; font-weight:480; }
+/* 首次安装（还没有任何历史）的引导态：别让弹层开成一片空白，
+   顺带用「能看到这段字」证明插件确实装上了、在跑。 */
+.esh-welcome{ padding:14px 13px 15px; text-align:left; }
+.esh-welcome-t{ font-size:12.5px; font-weight:600; color:var(--e-ink-2); margin-bottom:3px; }
+.esh-welcome-s{ font-size:11.5px; line-height:1.55; color:var(--e-dim); }
+.esh-welcome-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.esh-chip{
+  padding:2px 9px; border:1px solid var(--e-line); border-radius:999px;
+  background:var(--e-surface); color:var(--e-dim);
+  font:inherit; font-size:11px; cursor:pointer;
+}
+.esh-chip:hover{ border-color:var(--e-brand); background:var(--e-brand-soft); color:var(--e-brand); }
 .esh-foot{
   display:flex; align-items:center; flex-wrap:wrap; gap:3px 7px; padding:6px 12px;
   border-top:1px solid var(--e-line); background:var(--e-surface-2);
@@ -2999,14 +3022,18 @@ html[data-dsw-theme="dark"] .esx-menu, body[data-dsw-theme="dark"] .esx-menu,
 
       const browsing = bp !== null
       const showHistory = !browsing && q.trim() === '' && historyItems.length > 0
-      const showing = open && (q.trim().length > 0 || browsing || showHistory)
+      /* 空查询 + 一条历史都没有 = 刚装上那台机器/那个会话的第一屏。
+         以前这里什么都不弹，用户只看见一个空输入框，会以为插件没生效；
+         现在给一条引导，既说明用法，也证明「它确实在跑」。 */
+      const showWelcome = !browsing && q.trim() === '' && !showHistory
+      const showing = open && (q.trim().length > 0 || browsing || showHistory || showWelcome)
       const totalText = total == null ? '…' : total.toLocaleString('zh-CN')
-      const list = browsing ? bitems : showHistory ? historyItems : items
+      const list = browsing ? bitems : showHistory ? historyItems : showWelcome ? NO_ROWS : items
       const curSel = browsing ? bsel : showHistory ? hsel : sel
       const putSel = browsing ? setBsel : showHistory ? setHsel : setSel
       const busy = browsing ? bloading : loading
       const problem = browsing ? berror : error
-      const mode = browsing ? 'browse' : showHistory ? 'history' : 'search'
+      const mode = browsing ? 'browse' : showHistory ? 'history' : showWelcome ? 'welcome' : 'search'
 
       /* 面包屑：此电脑 › 盘符 › … › 当前目录 */
       const crumbs = (() => {
@@ -3048,7 +3075,9 @@ html[data-dsw-theme="dark"] .esx-menu, body[data-dsw-theme="dark"] .esx-menu,
             if (browsing) setBp(null)
           },
           onFocus: () => {
-            if (q.trim() || browsing || history.length) setOpen(true)
+            /* 以前是「有词 / 在浏览 / 有历史」才开弹层，于是新装的机器上点一下毫无反应。
+               现在无条件开：没历史就显示引导态，至少让人看见东西。 */
+            setOpen(true)
           },
           onKeyDown,
         }),
@@ -3162,7 +3191,15 @@ html[data-dsw-theme="dark"] .esx-menu, body[data-dsw-theme="dark"] .esx-menu,
                               '清空',
                             ),
                           )
-                        : h(
+                        : showWelcome
+                          ? h(
+                              React.Fragment,
+                              null,
+                              h('span', { className: 'esh-pill' }, '尚未搜索'),
+                              h('span', null, 'Everything 已就绪'),
+                              h('span', { className: 'esh-spacer' }),
+                            )
+                          : h(
                             React.Fragment,
                             null,
                             h('span', { className: 'esh-pill' }, totalText),
@@ -3376,11 +3413,47 @@ html[data-dsw-theme="dark"] .esx-menu, body[data-dsw-theme="dark"] .esx-menu,
                   ),
                 ),
                 !problem && !list.length && !busy
-                  ? h(
-                      'div',
-                      { className: 'esh-empty' },
-                      browsing ? '这个文件夹是空的' : '没有匹配项，换个更短的关键词试试',
-                    )
+                  ? showWelcome
+                    ? h(
+                        'div',
+                        { className: 'esh-welcome' },
+                        h('div', { className: 'esh-welcome-t' }, '还没有搜索记录'),
+                        h(
+                          'div',
+                          { className: 'esh-welcome-s' },
+                          '直接输入关键词就能搜本机文件。搜过的词会记在这里，最多保存 50 条，可以展开、单条删除、一键清空。',
+                        ),
+                        h(
+                          'div',
+                          { className: 'esh-welcome-chips' },
+                          WELCOME_TIPS.map((t) =>
+                            h(
+                              'button',
+                              {
+                                key: t.label,
+                                type: 'button',
+                                className: 'esh-chip',
+                                onMouseDown: (e) => e.preventDefault(),
+                                onClick: () => {
+                                  setQ(t.q)
+                                  setOpen(true)
+                                  try {
+                                    if (inputRef.current) inputRef.current.focus()
+                                  } catch {
+                                    /* 拿不到 ref 也不影响，方向键照样进输入框 */
+                                  }
+                                },
+                              },
+                              t.label,
+                            ),
+                          ),
+                        ),
+                      )
+                    : h(
+                        'div',
+                        { className: 'esh-empty' },
+                        browsing ? '这个文件夹是空的' : '没有匹配项，换个更短的关键词试试',
+                      )
                   : null,
                 /* 真故障才补一行大字；软提示（没装/没开 Everything）上面那条黄条已经说清了，别重复 */
                 problem && browsing && !errSoft(problem)
@@ -3392,18 +3465,26 @@ html[data-dsw-theme="dark"] .esx-menu, body[data-dsw-theme="dark"] .esx-menu,
               h(
                 'div',
                 { className: 'esh-foot' },
-                h('span', null, h('kbd', { className: 'esh-key' }, '↑↓'), '选择'),
-                h('span', { className: 'esh-dot' }, '·'),
-                h('span', null, h('kbd', { className: 'esh-key' }, '↵'), browsing ? '进入' : showHistory ? '重搜' : '打开'),
-                /* 历史态没有「定位」这个动作，别把一组按不动的键摆在底栏占地方 */
-                showHistory
+                /* 引导态一行可选的行都没有，按键提示就别摆了，只剩 Esc */
+                showWelcome ? null : h('span', null, h('kbd', { className: 'esh-key' }, '↑↓'), '选择'),
+                showWelcome ? null : h('span', { className: 'esh-dot' }, '·'),
+                h(
+                  'span',
+                  null,
+                  h('kbd', { className: 'esh-key' }, '↵'),
+                  browsing ? '进入' : showHistory ? '重搜' : showWelcome ? '搜索' : '打开',
+                ),
+                /* 历史态和引导态都没有「定位」这个动作，别把一组按不动的键摆在底栏占地方 */
+                showHistory || showWelcome
                   ? null
                   : [
                       h('span', { className: 'esh-dot', key: 'd2' }, '·'),
                       h('span', { key: 'loc' }, h('kbd', { className: 'esh-key' }, 'Ctrl↵'), '定位'),
                     ],
                 h('span', { className: 'esh-spacer' }),
-                browsing || showHistory ? null : h('span', { className: 'esh-hint' }, '右键更多 · 拖入输入框即加附件'),
+                browsing || showHistory || showWelcome
+                  ? null
+                  : h('span', { className: 'esh-hint' }, '右键更多 · 拖入输入框即加附件'),
                 h('span', null, h('kbd', { className: 'esh-key' }, 'Esc'), browsing ? '返回' : '关闭'),
               ),
             )

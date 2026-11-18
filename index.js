@@ -51,7 +51,7 @@ const ROUTE_NAMES = [
 ]
 
 /* 改动后改这个值，刷新 /status 就能确认宿主加载的是不是磁盘上这一版 */
-const BUILD_TAG = '20261118-market-ready'
+const BUILD_TAG = '20261118-welcome-guide'
 
 const DEFAULT_LIMIT = 80
 const HARD_LIMIT = 1000
